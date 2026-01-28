@@ -1,5 +1,6 @@
 #include "config/Tokenizer.hpp"
 #include <cctype>
+#include <iostream>
 
 Tokenizer::Tokenizer(std::istream& in)
     : _in(in) {}
@@ -60,4 +61,19 @@ Token Tokenizer::readWord() {
         value += _in.get();
     }
     return Token(WORD, value);
+}
+
+void Tokenizer::printTokens(const std::vector<Token>& tokens) {
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        const Token& token = tokens[i];
+        std::string typeStr;
+        switch (token.type) {
+            case WORD: typeStr = "WORD"; break;
+            case LBRACE: typeStr = "LBRACE"; break;
+            case RBRACE: typeStr = "RBRACE"; break;
+            case SEMICOLON: typeStr = "SEMICOLON"; break;
+            default: typeStr = "UNKNOWN"; break;
+        }
+        std::cout << "Token " << i << ": Type=" << typeStr << ", Value=\"" << token.value << "\"" << std::endl;
+    }
 }

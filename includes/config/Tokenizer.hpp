@@ -8,6 +8,8 @@
 class Tokenizer {
 public:
     explicit Tokenizer(std::istream& in);
+    // DEBUG ONLY
+    static void printTokens(const std::vector<Token>& tokens);
 
     std::vector<Token> tokenize();
 

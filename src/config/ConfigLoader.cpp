@@ -4,7 +4,7 @@
 #include "config/Tokenizer.hpp"
 #include "config/ConfigParser.hpp"
 // #include "config/ConfigValidator.hpp"
-#include "ConfigErrors.hpp"
+#include "config/ConfigErrors.hpp"
 
 void ConfigLoader::load(const std::string& path) {
     if (path.empty())
@@ -19,23 +19,14 @@ void ConfigLoader::load(const std::string& path) {
 
     Tokenizer tokenizer(file);
     std::vector<Token> tokens = tokenizer.tokenize();
-
     //print tokens for debug
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        const Token& token = tokens[i];
-        std::string typeStr;
-        switch (token.type) {
-            case WORD: typeStr = "WORD"; break;
-            case LBRACE: typeStr = "LBRACE"; break;
-            case RBRACE: typeStr = "RBRACE"; break;
-            case SEMICOLON: typeStr = "SEMICOLON"; break;
-            default: typeStr = "UNKNOWN"; break;
-        }
-        std::cout << "Token " << i << ": Type=" << typeStr << ", Value=\"" << token.value << "\"" << std::endl;
-    }
-    // ConfigParser parser(tokens);
-    // ConfigAST ast = parser.parse();
+    // Tokenizer::printTokens(tokens);
 
+    ConfigParser parser(tokens);
+    ConfigAST ast = parser.parse();
+
+    // print AST for debug
+    ConfigParser::printAST(ast);
     // ConfigValidator validator;
     // validator.validate(ast);
 

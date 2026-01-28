@@ -1,6 +1,6 @@
 #include <iostream>
-#include "ConfigLoader.hpp"
-#include "ConfigErrors.hpp"
+#include "config/ConfigLoader.hpp"
+#include "config/ConfigErrors.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 2) {
