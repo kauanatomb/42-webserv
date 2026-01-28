@@ -1,9 +1,9 @@
 #include <fstream>
 #include <iostream>
-#include "ConfigLoader.hpp"
-#include "Tokenizer.hpp"
-// #include "ConfigParser.hpp"
-// #include "ConfigValidator.hpp"
+#include "config/ConfigLoader.hpp"
+#include "config/Tokenizer.hpp"
+#include "config/ConfigParser.hpp"
+// #include "config/ConfigValidator.hpp"
 #include "ConfigErrors.hpp"
 
 void ConfigLoader::load(const std::string& path) {

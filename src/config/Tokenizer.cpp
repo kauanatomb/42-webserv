@@ -1,4 +1,4 @@
-#include "Tokenizer.hpp"
+#include "config/Tokenizer.hpp"
 #include <cctype>
 
 Tokenizer::Tokenizer(std::istream& in)
