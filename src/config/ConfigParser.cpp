@@ -32,7 +32,7 @@ ConfigAST ConfigParser::parse() {
         if (current().type == WORD && current().value == "server")
             ast.servers.push_back(parseServer());
         else
-            throw SyntaxError("unexpected token outside erver block");
+            throw SyntaxError("unexpected token outside server block");
     }
     return ast;
 }
