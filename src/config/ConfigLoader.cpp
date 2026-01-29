@@ -3,7 +3,7 @@
 #include "config/ConfigLoader.hpp"
 #include "config/Tokenizer.hpp"
 #include "config/ConfigParser.hpp"
-// #include "config/ConfigValidator.hpp"
+#include "config/ConfigValidator.hpp"
 #include "config/ConfigErrors.hpp"
 
 void ConfigLoader::load(const std::string& path) {
@@ -26,9 +26,9 @@ void ConfigLoader::load(const std::string& path) {
     ConfigAST ast = parser.parse();
 
     // print AST for debug
-    ConfigParser::printAST(ast);
-    // ConfigValidator validator;
-    // validator.validate(ast);
+    // ConfigParser::printAST(ast);
+    ConfigValidator validator;
+    validator.validate(ast);
 
     // return ast;
 }
