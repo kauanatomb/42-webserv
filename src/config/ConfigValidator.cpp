@@ -14,16 +14,15 @@ static DirectiveRule makeRule(bool s, bool l, size_t min, size_t max) {
     return r;
 }
 
-
 static void validateListenStatic(const Directive& d) {
     if (d.args.empty())
-        throw ValidationError("listen requires at least address or port");
+        throw ValidationError("listen requires interface:port format");
     
     std::string addr_port = d.args[0];
     size_t colon_pos = addr_port.rfind(':');
     
     if (colon_pos == std::string::npos)
-        throw ValidationError("listen format: address:port");
+        throw ValidationError("listen: format must be interface:port");
     
     std::string port_str = addr_port.substr(colon_pos + 1);
     if (port_str.empty())
@@ -129,18 +128,18 @@ static void validateOnOffStatic(const Directive& d) {
 
 ConfigValidator::ConfigValidator() {
     _rules["listen"] = makeRule(true, false, 1, 2);
-    _rules["server_name"] = makeRule(true, false, 1, 2); //verify
-    _rules["root"]   = makeRule(true, true, 1, 1);
-    _rules["index"]  = makeRule(true, true, 1, SIZE_MAX);
+    _rules["server_name"] = makeRule(true, false, 1, SIZE_MAX);
+    _rules["root"] = makeRule(true, true, 1, 1);
+    _rules["index"] = makeRule(true, true, 1, SIZE_MAX);
     _rules["client_max_body_size"] = makeRule(true, false, 1, 1);  //verify
-    _rules["return"] = makeRule(false, true, 1, 2);
-    _rules["error_page"] = makeRule(true, false, 2, SIZE_MAX);
+    _rules["return"] = makeRule(true, true, 1, 2);
+    _rules["error_page"] = makeRule(true, true, 2, SIZE_MAX);
     _rules["allow_methods"] = makeRule(false, true, 1, SIZE_MAX);
-    _rules["autoindex"] = makeRule(false, true, 1, 1); //verify
+    _rules["autoindex"] = makeRule(true, true, 1, 1); //verify
     _rules["upload"] = makeRule(false, true, 1, 1); //verify
     _rules["upload_store"] = makeRule(false, true, 1, 1); //verify
     _rules["cgi"] = makeRule(false, true, 1, 1); //verify
-    _rules["cgi_exec"] = makeRule(false, true, 1, 2); //verify
+    _rules["cgi_exec"] = makeRule(false, true, 2, 2); //verify
 
     _argValidators["allow_methods"] = &validateAllowMethodsStatic;
     _argValidators["autoindex"] = &validateOnOffStatic;
@@ -203,7 +202,7 @@ void ConfigValidator::checkCardinality(const std::vector<Directive>& directives)
     for(size_t i = 0; i < directives.size(); i++)
         count[directives[i].name]++;
 
-    if (count["root"] > 1) //verify if is mandatory have it? there more that we must verify??
+    if (count["root"] > 1)
         throw ValidationError("root duplicated");
     if (count["index"] > 1)
         throw ValidationError("index duplicated");
