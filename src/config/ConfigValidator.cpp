@@ -131,15 +131,15 @@ ConfigValidator::ConfigValidator() {
     _rules["server_name"] = makeRule(true, false, 1, SIZE_MAX);
     _rules["root"] = makeRule(true, true, 1, 1);
     _rules["index"] = makeRule(true, true, 1, SIZE_MAX);
-    _rules["client_max_body_size"] = makeRule(true, false, 1, 1);  //verify
+    _rules["client_max_body_size"] = makeRule(true, false, 1, 1);
     _rules["return"] = makeRule(true, true, 1, 2);
     _rules["error_page"] = makeRule(true, true, 2, SIZE_MAX);
     _rules["allow_methods"] = makeRule(false, true, 1, SIZE_MAX);
-    _rules["autoindex"] = makeRule(true, true, 1, 1); //verify
-    _rules["upload"] = makeRule(false, true, 1, 1); //verify
-    _rules["upload_store"] = makeRule(false, true, 1, 1); //verify
-    _rules["cgi"] = makeRule(false, true, 1, 1); //verify
-    _rules["cgi_exec"] = makeRule(false, true, 2, 2); //verify
+    _rules["autoindex"] = makeRule(true, true, 1, 1);
+    _rules["upload"] = makeRule(false, true, 1, 1);
+    _rules["upload_store"] = makeRule(false, true, 1, 1);
+    _rules["cgi"] = makeRule(false, true, 1, 1);
+    _rules["cgi_exec"] = makeRule(false, true, 2, 2);
 
     _argValidators["allow_methods"] = &validateAllowMethodsStatic;
     _argValidators["autoindex"] = &validateOnOffStatic;
@@ -190,7 +190,6 @@ void ConfigValidator::validateDirective(const Directive& d, bool in_server, bool
     if (d.args.size() < rule.min_args || d.args.size() > rule.max_args)
         throw ValidationError("invalid args count for " + d.name);
     
-    // Apply argument validators if they exist
     std::map<std::string, ArgValidator>::iterator validator_it = _argValidators.find(d.name);
     if (validator_it != _argValidators.end())
         validator_it->second(d);
