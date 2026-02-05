@@ -6,7 +6,7 @@
 #include "config/ConfigValidator.hpp"
 #include "config/ConfigErrors.hpp"
 
-void ConfigLoader::load(const std::string& path) {
+ConfigAST ConfigLoader::load(const std::string& path) {
     if (path.empty())
         throw ConfigError("config path is empty");
 
@@ -30,5 +30,5 @@ void ConfigLoader::load(const std::string& path) {
     ConfigValidator validator;
     validator.validate(ast);
 
-    // return ast;
+    return ast;
 }
