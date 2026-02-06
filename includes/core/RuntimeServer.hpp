@@ -13,4 +13,8 @@ class RuntimeServer {
         size_t client_max_body_size;
         std::map<int, std::string> error_pages;
         std::vector<RuntimeLocation> locations;
+    public:
+        std::vector<SocketKey>& getListens();
+        void addLocation(RuntimeLocation& loc);
+        void sortLocations();
 };

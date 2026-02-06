@@ -5,5 +5,7 @@ class ConfigResolver {
     public:
         static RuntimeConfig resolve(const ConfigAST& ast);
     private:
-    // helpers
+        static RuntimeServer buildServer(const ServerNode& node);
+        static RuntimeLocation buildLocation(const LocationNode& node, const RuntimeServer& parent);
+        static void applyServerDirectives(RuntimeServer& server, const std::vector<Directive>& directives);
 };

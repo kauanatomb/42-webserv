@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     const std::string configPath = argv[1];
     try {
         ConfigAST ast = ConfigLoader::load(configPath);
-        RuntimeConfig runtime = ConfigResolver::resolve(ast);
+        const RuntimeConfig runtime = ConfigResolver::resolve(ast);
         // initialize server after (sockets, select..)
     } catch (const ConfigError& e) {
         std::cerr << "Config Error: " << e.what() << std::endl;
