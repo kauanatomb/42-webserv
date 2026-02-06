@@ -1,23 +1,9 @@
 #pragma once
-#include "RuntimeServer.hpp"
 #include <map>
-
-struct SocketKey {
-    uint32_t ip;
-    uint16_t port;
-};
+#include <vector>
+#include <string>
+#include "RuntimeServer.hpp"
 
 struct RuntimeConfig {
-    std::map<SocketKey, std::vector<RuntimeServer>> servers;
-};
-
-enum HttpMethod {
-    GET,
-    POST,
-    DELETE
-};
-
-struct ReturnRule {
-    int status_code;
-    std::string target;
+    std::map<SocketKey, std::vector<RuntimeServer> > servers;
 };

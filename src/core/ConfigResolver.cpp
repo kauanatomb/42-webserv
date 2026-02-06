@@ -1,4 +1,118 @@
 #include "core/ConfigResolver.hpp"
+#include <cstdlib>
+#include <cctype>
+#include <limits>
+#include <iostream>
+
+static size_t parseClientMaxBodySize(const std::string& value) {
+    size_t i = 0;
+    while (i < value.size() && std::isdigit(value[i]))
+        ++i;
+    if (i == 0)
+        return 0;
+
+    unsigned long base = std::strtoul(value.substr(0, i).c_str(), 0, 10);
+    std::string suffix = value.substr(i);
+    size_t multiplier = 1;
+
+    if (suffix == "K" || suffix == "KB")
+        multiplier = 1024;
+    else if (suffix == "M" || suffix == "MB")
+        multiplier = 1024 * 1024;
+    else if (suffix == "G" || suffix == "GB")
+        multiplier = 1024 * 1024 * 1024;
+
+    // overflow check
+    if (base > std::numeric_limits<size_t>::max() / multiplier)
+        return std::numeric_limits<size_t>::max();
+    
+    return static_cast<size_t>(base) * multiplier;
+}
+
+static void printServer(RuntimeServer& server) {
+    std::cout << "=== Server Configuration ===" << std::endl;
+    
+    // Listen addresses
+    const std::vector<SocketKey>& listens = server.getListens();
+    std::cout << "Listen: ";
+    for (size_t i = 0; i < listens.size(); ++i) {
+        uint32_t ip = listens[i].ip;
+        unsigned char a = (ip >> 24) & 0xFF;
+        unsigned char b = (ip >> 16) & 0xFF;
+        unsigned char c = (ip >> 8) & 0xFF;
+        unsigned char d = ip & 0xFF;
+        
+        if (i > 0) std::cout << ", ";
+        std::cout << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
+                    << static_cast<int>(c) << "." << static_cast<int>(d) 
+                    << ":" << listens[i].port;
+    }
+    std::cout << std::endl;
+    
+    // Server names
+    const std::vector<std::string>& server_names = server.getServerNames();
+    std::cout << "Server Name: ";
+    for (size_t i = 0; i < server_names.size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << server_names[i];
+    }
+    std::cout << std::endl;
+    
+    // Root directory
+    std::cout << "Root: " << server.getRoot() << std::endl;
+    
+    // Index files
+    const std::vector<std::string>& index = server.getIndex();
+    std::cout << "Index: ";
+    for (size_t i = 0; i < index.size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << index[i];
+    }
+    std::cout << std::endl;
+    
+    // Client max body size
+    std::cout << "Client Max Body Size: " << server.getClientMaxBodySize() << " bytes" << std::endl;
+    
+    // Error pages
+    const std::map<int, std::string>& error_pages = server.getErrorPages();
+    if (!error_pages.empty()) {
+        std::cout << "Error Pages: ";
+        for (std::map<int, std::string>::const_iterator it = error_pages.begin(); 
+                it != error_pages.end(); ++it) {
+            if (it != error_pages.begin()) std::cout << ", ";
+            std::cout << it->first << ":" << it->second;
+        }
+        std::cout << std::endl;
+    }
+    
+    std::cout << std::endl;
+}
+
+static SocketKey createSocketKey(const Directive& d) {
+    SocketKey socket;
+    std::string addr_port = d.args[0];
+    size_t colon_pos = addr_port.rfind(':');
+    
+    std::string ip_str;
+    std::string port_str;
+    
+    if (colon_pos == std::string::npos) {
+        ip_str = "0.0.0.0";
+        port_str = addr_port;
+    } else {
+        ip_str = addr_port.substr(0, colon_pos);
+        port_str = addr_port.substr(colon_pos + 1);
+    }
+    
+    // Convert IP (xxx.xxx.xxx.xxx) to uint32_t
+    unsigned int a, b, c, d_ip;
+    std::sscanf(ip_str.c_str(), "%u.%u.%u.%u", &a, &b, &c, &d_ip);
+    socket.ip = (a << 24) | (b << 16) | (c << 8) | d_ip;
+    // Convert port to uint16_t
+    socket.port = static_cast<uint16_t>(std::strtoul(port_str.c_str(), 0, 10));
+    
+    return socket;
+}
 
 RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     RuntimeConfig runtime;
@@ -20,15 +134,59 @@ RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
 RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
     RuntimeServer server;
     applyServerDirectives(server, node.directives);
-    for(std::vector<LocationNode>::const_iterator locNode = node.locations.begin();
-        locNode != node.locations.end(); ++locNode) {
-            RuntimeLocation loc = buildLocation(*locNode, server);
-            server.addLocation(loc);
-    }
-    server.sortLocations();
+    // for(std::vector<LocationNode>::const_iterator locNode = node.locations.begin();
+        // locNode != node.locations.end(); ++locNode) {
+            // RuntimeLocation loc = buildLocation(*locNode, server);
+            // server.addLocation(loc);
+    // }
+    // server.sortLocations();
+    printServer(server);
     return server;
 }
 
-RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
-
+void ConfigResolver::applyServerDirectives(RuntimeServer& server, const std::vector<Directive>& directives) {
+    for(std::vector<Directive>::const_iterator it = directives.begin(); it != directives.end(); ++it) {
+        if ((*it).name == "listen")
+            server.addListen(createSocketKey(*it));
+        else if ((*it).name == "server_name")
+            server.addServerNames((*it).args);
+        else if ((*it).name == "root") {
+            if (!(*it).args.empty())
+                server.setRoot((*it).args[0]);
+        }
+        else if ((*it).name == "index")
+            server.addIndex((*it).args);
+        else if ((*it).name == "client_max_body_size") {
+            if (!(*it).args.empty())
+                server.setClientMaxBodySize(parseClientMaxBodySize((*it).args[0]));
+        }
+        else if ((*it).name == "error_page") {
+            if ((*it).args.size() >= 2) {
+                const std::string& path = (*it).args.back();
+                for (size_t i = 0; i + 1 < (*it).args.size(); ++i) {
+                    int code = std::atoi((*it).args[i].c_str());
+                    server.addErrorPage(code, path);
+                }
+            }
+        }
+    }
+    setDefaults(server);
 }
+
+void ConfigResolver::setDefaults(RuntimeServer& server) {
+    if (server.getRoot().empty())
+        server.setRoot("/var/www/html");
+    
+    if (server.getIndex().empty()) {
+        std::vector<std::string> default_index;
+        default_index.push_back("index.html");
+        server.addIndex(default_index);
+    }
+    
+    if (server.getClientMaxBodySize() == 0)
+        server.setClientMaxBodySize(1024 * 1024);
+}
+
+// RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
+
+// }
