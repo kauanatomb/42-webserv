@@ -255,4 +255,6 @@ void ConfigValidator::validateContextualRules(const std::vector<Directive>& dire
         throw ValidationError("cgi_exec requires cgi on");
     if (has_upload_store && !has_upload_on)
         throw ValidationError("upload_store requires upload on");
+    if (has_upload_on && !has_upload_store)
+        throw ValidationError("upload on requires upload_store");
 }
