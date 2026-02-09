@@ -15,20 +15,19 @@ class RuntimeServer {
         std::map<int, std::string> error_pages;
         std::vector<RuntimeLocation> locations;
     public:
-        std::vector<SocketKey>& getListens();
         const std::vector<SocketKey>& getListens() const;
+        const std::vector<std::string>& getServerNames() const;
+        const std::vector<std::string>& getIndex() const;
+        const std::string& getRoot() const;
+        size_t getClientMaxBodySize() const;
+        const std::map<int, std::string>& getErrorPages() const;
+
         void addListen(const SocketKey& key);
         void addServerNames(const std::vector<std::string>& names);
         void setRoot(const std::string& value);
         void addIndex(const std::vector<std::string>& values);
         void setClientMaxBodySize(size_t value);
         void addErrorPage(int status, const std::string& path);
-        const std::vector<std::string>& getServerNames() const;
-        const std::string& getRoot() const;
-        const std::vector<std::string>& getIndex() const;
-        size_t getClientMaxBodySize() const;
-        std::map<int, std::string>& getErrorPages();
-        const std::map<int, std::string>& getErrorPages() const;
         void addLocation(const RuntimeLocation& loc);
         void sortLocations();
 };

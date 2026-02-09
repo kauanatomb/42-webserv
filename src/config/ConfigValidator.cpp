@@ -140,10 +140,10 @@ ConfigValidator::ConfigValidator() {
     _rules["root"] = makeRule(true, true, 1, 1);
     _rules["index"] = makeRule(true, true, 1, SIZE_MAX);
     _rules["client_max_body_size"] = makeRule(true, false, 1, 1);
-    _rules["return"] = makeRule(true, true, 1, 2);
-    _rules["error_page"] = makeRule(true, true, 2, SIZE_MAX);
+    _rules["return"] = makeRule(false, true, 1, 2);
+    _rules["error_page"] = makeRule(true, true, 2, 2);
     _rules["allow_methods"] = makeRule(false, true, 1, SIZE_MAX);
-    _rules["autoindex"] = makeRule(true, true, 1, 1);
+    _rules["autoindex"] = makeRule(false, true, 1, 1);
     _rules["upload"] = makeRule(false, true, 1, 1);
     _rules["upload_store"] = makeRule(false, true, 1, 1);
     _rules["cgi"] = makeRule(false, true, 1, 1);

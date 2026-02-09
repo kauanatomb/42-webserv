@@ -1,9 +1,20 @@
 #include "core/RuntimeServer.hpp"
 
-std::vector<SocketKey>& RuntimeServer::getListens() { return listens; }
-
+//getters
 const std::vector<SocketKey>& RuntimeServer::getListens() const { return listens; }
 
+const std::string& RuntimeServer::getRoot() const { return root; }
+
+const std::vector<std::string>& RuntimeServer::getIndex() const { return index; }
+
+size_t RuntimeServer::getClientMaxBodySize() const { return client_max_body_size; }
+
+
+const std::map<int, std::string>& RuntimeServer::getErrorPages() const { 
+    return error_pages; 
+}
+
+//setters
 void RuntimeServer::addListen(const SocketKey& key) { listens.push_back(key); }
 
 void RuntimeServer::addServerNames(const std::vector<std::string>& names) {
@@ -26,18 +37,7 @@ const std::vector<std::string>& RuntimeServer::getServerNames() const {
     return server_names; 
 }
 
-const std::string& RuntimeServer::getRoot() const { return root; }
-
-const std::vector<std::string>& RuntimeServer::getIndex() const { return index; }
-
-size_t RuntimeServer::getClientMaxBodySize() const { return client_max_body_size; }
-
-std::map<int, std::string>& RuntimeServer::getErrorPages() { return error_pages; }
-
-const std::map<int, std::string>& RuntimeServer::getErrorPages() const { 
-    return error_pages; 
-}
-
 void RuntimeServer::addLocation(const RuntimeLocation& loc) { locations.push_back(loc); }
 
+// others
 void RuntimeServer::sortLocations() {} //implement
