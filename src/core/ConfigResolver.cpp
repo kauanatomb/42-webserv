@@ -86,6 +86,8 @@ static void printServer(RuntimeServer& server) {
     }
     
     std::cout << std::endl;
+
+    // print locations
 }
 
 static SocketKey createSocketKey(const Directive& d) {
@@ -116,9 +118,9 @@ static SocketKey createSocketKey(const Directive& d) {
 
 RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     RuntimeConfig runtime;
-    // create RuntimeServer for each ServerNode
-    // create RuntimeLocation for eacho location{}
-    // apply inherance
+    // create RuntimeServer for each ServerNode DONE
+    // create RuntimeLocation for eacho location{} DONE
+    // apply inherance DOING
     // sort locations
     // build RuntimeConfig
     for(std::vector<ServerNode>::const_iterator it = ast.servers.begin(); it != ast.servers.end(); ++it) {
@@ -134,12 +136,12 @@ RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
 RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
     RuntimeServer server;
     applyServerDirectives(server, node.directives);
-    // for(std::vector<LocationNode>::const_iterator locNode = node.locations.begin();
-        // locNode != node.locations.end(); ++locNode) {
-            // RuntimeLocation loc = buildLocation(*locNode, server);
-            // server.addLocation(loc);
-    // }
-    // server.sortLocations();
+    for(std::vector<LocationNode>::const_iterator locNode = node.locations.begin();
+        locNode != node.locations.end(); ++locNode) {
+            RuntimeLocation loc = buildLocation(*locNode, server);
+            server.addLocation(loc);
+    }
+    // server.sortLocations(); //implement
     printServer(server);
     return server;
 }
@@ -150,23 +152,17 @@ void ConfigResolver::applyServerDirectives(RuntimeServer& server, const std::vec
             server.addListen(createSocketKey(*it));
         else if ((*it).name == "server_name")
             server.addServerNames((*it).args);
-        else if ((*it).name == "root") {
-            if (!(*it).args.empty())
-                server.setRoot((*it).args[0]);
-        }
+        else if ((*it).name == "root")
+            server.setRoot((*it).args[0]);
         else if ((*it).name == "index")
             server.addIndex((*it).args);
-        else if ((*it).name == "client_max_body_size") {
-            if (!(*it).args.empty())
-                server.setClientMaxBodySize(parseClientMaxBodySize((*it).args[0]));
-        }
+        else if ((*it).name == "client_max_body_size")
+            server.setClientMaxBodySize(parseClientMaxBodySize((*it).args[0]));
         else if ((*it).name == "error_page") {
-            if ((*it).args.size() >= 2) {
-                const std::string& path = (*it).args.back();
-                for (size_t i = 0; i + 1 < (*it).args.size(); ++i) {
-                    int code = std::atoi((*it).args[i].c_str());
-                    server.addErrorPage(code, path);
-                }
+            const std::string& path = (*it).args.back();
+            for (size_t i = 0; i + 1 < (*it).args.size(); ++i) {
+                int code = std::atoi((*it).args[i].c_str());
+                server.addErrorPage(code, path);
             }
         }
     }
@@ -187,6 +183,29 @@ void ConfigResolver::setDefaults(RuntimeServer& server) {
         server.setClientMaxBodySize(1024 * 1024);
 }
 
-// RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
+void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocation& loc) {
+    if (dir.name == "root")
+        loc.setRoot(dir.args[0]);
+    else if (dir.name == "index")
+        loc.setIndex(dir.args);
+    else if (dir.name == "upload" || dir.name == "cgi" || (dir.name == "autoindex" && dir.args[0] == "on"))
+        loc.changeStatus(dir.name);
+    else if (dir.name == "allowed_methods")
+        loc.methodsHTTP(dir.args);
+    else if (dir.name == "return")
+        loc.hasReturn(dir.args);
+    else if (dir.name == "upload_store")
+        loc.setUploadStore(dir.args[0]);
+    else if (dir.name == "cgi_exec")
+        loc.setCGI(dir.args);
+}
 
-// }
+RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
+    RuntimeLocation loc;
+    loc.setPath(node.path);
+    for(std::vector<Directive>::const_iterator it = node.directives.begin(); it != node.directives.end(); ++it) {
+        ApplyLocationDirectives(*it, loc);
+    }
+    // ApplyInherance(loc, parent);
+    return loc;
+}
