@@ -16,15 +16,23 @@ static DirectiveRule makeRule(bool s, bool l, size_t min, size_t max) {
 
 static void validateListenStatic(const Directive& d) {
     if (d.args.empty())
-        throw ValidationError("listen requires interface:port format");
+        throw ValidationError("listen requires at least a port");
     
     std::string addr_port = d.args[0];
+    std::string ip_str;
+    std::string port_str;
     size_t colon_pos = addr_port.rfind(':');
     
-    if (colon_pos == std::string::npos)
-        throw ValidationError("listen: format must be interface:port");
-    
-    std::string port_str = addr_port.substr(colon_pos + 1);
+    if (colon_pos == std::string::npos) {
+        ip_str = "0.0.0.0";
+        port_str = addr_port;
+    } else {
+        ip_str = addr_port.substr(0, colon_pos);
+        port_str = addr_port.substr(colon_pos + 1);
+        if (ip_str.empty())
+            ip_str = "0.0.0.0";
+    }
+
     if (port_str.empty())
         throw ValidationError("listen: port is empty");
     
