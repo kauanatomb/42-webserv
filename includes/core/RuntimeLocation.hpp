@@ -19,8 +19,8 @@ class RuntimeLocation {
         bool has_cgi;
         std::map<std::string, std::string> cgi_exec;
     public:
+        RuntimeLocation(const std::string& nodePath);
         // Setters
-        void setPath(const std::string& value);
         void setRoot(const std::string& value);
         void setIndex(const std::vector<std::string>& values);
         void setUploadStore(const std::string& value);

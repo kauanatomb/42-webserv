@@ -88,6 +88,72 @@ static void printServer(RuntimeServer& server) {
     std::cout << std::endl;
 
     // print locations
+    const std::vector<RuntimeLocation>& locations = server.getLocations();
+    if (!locations.empty()) {
+        std::cout << "=== Locations (" << locations.size() << ") ===" << std::endl;
+        for (size_t i = 0; i < locations.size(); ++i) {
+            const RuntimeLocation& loc = locations[i];
+            std::cout << "\nLocation [" << (i + 1) << "]: " << loc.getPath() << std::endl;
+            
+            if (!loc.getRoot().empty())
+                std::cout << "  Root: " << loc.getRoot() << std::endl;
+            
+            const std::vector<std::string>& loc_index = loc.getIndex();
+            if (!loc_index.empty()) {
+                std::cout << "  Index: ";
+                for (size_t j = 0; j < loc_index.size(); ++j) {
+                    if (j > 0) std::cout << ", ";
+                    std::cout << loc_index[j];
+                }
+                std::cout << std::endl;
+            }
+            
+            if (loc.getAutoindex())
+                std::cout << "  Autoindex: on" << std::endl;
+            
+            const std::set<HttpMethod>& methods = loc.getAllowedMethods();
+            if (!methods.empty()) {
+                std::cout << "  Allowed Methods: ";
+                bool first = true;
+                for (std::set<HttpMethod>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
+                    if (!first) std::cout << ", ";
+                    if (*it == GET) std::cout << "GET";
+                    else if (*it == POST) std::cout << "POST";
+                    else if (*it == DELETE) std::cout << "DELETE";
+                    first = false;
+                }
+                std::cout << std::endl;
+            }
+            
+            if (loc.getHasReturn()) {
+                const ReturnRule& redirect = loc.getRedirect();
+                std::cout << "  Return: " << redirect.status_code;
+                if (!redirect.target.empty())
+                    std::cout << " " << redirect.target;
+                std::cout << std::endl;
+            }
+            
+            if (loc.getHasUpload()) {
+                std::cout << "  Upload: on" << std::endl;
+                if (!loc.getUploadStore().empty())
+                    std::cout << "  Upload Store: " << loc.getUploadStore() << std::endl;
+            }
+            
+            if (loc.getHasCGI()) {
+                const std::map<std::string, std::string>& cgi_exec = loc.getCGIExec();
+                if (!cgi_exec.empty()) {
+                    std::cout << "  CGI Exec: ";
+                    for (std::map<std::string, std::string>::const_iterator it = cgi_exec.begin();
+                            it != cgi_exec.end(); ++it) {
+                        if (it != cgi_exec.begin()) std::cout << ", ";
+                        std::cout << it->first << " -> " << it->second;
+                    }
+                    std::cout << std::endl;
+                }
+            }
+        }
+        std::cout << std::endl;
+    }
 }
 
 static SocketKey createSocketKey(const Directive& d) {
@@ -190,7 +256,7 @@ void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocati
         loc.setIndex(dir.args);
     else if (dir.name == "upload" || dir.name == "cgi" || (dir.name == "autoindex" && dir.args[0] == "on"))
         loc.changeStatus(dir.name);
-    else if (dir.name == "allowed_methods")
+    else if (dir.name == "allow_methods")
         loc.methodsHTTP(dir.args);
     else if (dir.name == "return")
         loc.hasReturn(dir.args);
@@ -201,8 +267,8 @@ void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocati
 }
 
 RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
-    RuntimeLocation loc;
-    loc.setPath(node.path);
+    RuntimeLocation loc(node.path);
+    (void)parent;
     for(std::vector<Directive>::const_iterator it = node.directives.begin(); it != node.directives.end(); ++it) {
         ApplyLocationDirectives(*it, loc);
     }

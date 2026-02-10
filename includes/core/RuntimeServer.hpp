@@ -21,6 +21,7 @@ class RuntimeServer {
         const std::string& getRoot() const;
         size_t getClientMaxBodySize() const;
         const std::map<int, std::string>& getErrorPages() const;
+        const std::vector<RuntimeLocation>& getLocations() const;
 
         void addListen(const SocketKey& key);
         void addServerNames(const std::vector<std::string>& names);

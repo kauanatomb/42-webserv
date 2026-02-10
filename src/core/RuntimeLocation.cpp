@@ -1,8 +1,9 @@
 #include "core/RuntimeLocation.hpp"
 #include <cstdlib>
 
+RuntimeLocation::RuntimeLocation(const std::string& nodePath) : path(nodePath), autoindex(false), has_return(false), has_upload(false), has_cgi(false) {}
+
 // Setters
-void RuntimeLocation::setPath(const std::string& value) { path = value; }
 
 void RuntimeLocation::setRoot(const std::string& value) { root = value; }
 

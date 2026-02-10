@@ -37,6 +37,10 @@ const std::vector<std::string>& RuntimeServer::getServerNames() const {
     return server_names; 
 }
 
+const std::vector<RuntimeLocation>& RuntimeServer::getLocations() const {
+    return locations;
+}
+
 void RuntimeServer::addLocation(const RuntimeLocation& loc) { locations.push_back(loc); }
 
 // others
