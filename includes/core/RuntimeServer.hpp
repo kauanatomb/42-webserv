@@ -15,6 +15,7 @@ class RuntimeServer {
         std::map<int, std::string> error_pages;
         std::vector<RuntimeLocation> locations;
     public:
+        RuntimeServer();
         const std::vector<SocketKey>& getListens() const;
         const std::vector<std::string>& getServerNames() const;
         const std::vector<std::string>& getIndex() const;

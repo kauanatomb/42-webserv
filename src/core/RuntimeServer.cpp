@@ -1,6 +1,8 @@
 #include "core/RuntimeServer.hpp"
 #include <algorithm>
 
+RuntimeServer::RuntimeServer() : client_max_body_size(0) {}
+
 //getters
 const std::vector<SocketKey>& RuntimeServer::getListens() const { return listens; }
 
