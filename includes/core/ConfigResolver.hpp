@@ -11,4 +11,9 @@ class ConfigResolver {
         static void applyServerDirectives(RuntimeServer& server, const std::vector<Directive>& directives);
         static void setDefaults(RuntimeServer& server);
         static void ApplyLocationDirectives(const Directive& dir, RuntimeLocation& loc);
+        
+        // Debug methods
+        static void debugPrintServer(const RuntimeServer& server);
+        static void debugPrintServerBasicInfo(const RuntimeServer& server);
+        static void debugPrintLocation(const RuntimeLocation& loc, size_t index);
 };

@@ -29,133 +29,6 @@ static size_t parseClientMaxBodySize(const std::string& value) {
     return static_cast<size_t>(base) * multiplier;
 }
 
-static void printServer(RuntimeServer& server) {
-    std::cout << "=== Server Configuration ===" << std::endl;
-    
-    // Listen addresses
-    const std::vector<SocketKey>& listens = server.getListens();
-    std::cout << "Listen: ";
-    for (size_t i = 0; i < listens.size(); ++i) {
-        uint32_t ip = listens[i].ip;
-        unsigned char a = (ip >> 24) & 0xFF;
-        unsigned char b = (ip >> 16) & 0xFF;
-        unsigned char c = (ip >> 8) & 0xFF;
-        unsigned char d = ip & 0xFF;
-        
-        if (i > 0) std::cout << ", ";
-        std::cout << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
-                    << static_cast<int>(c) << "." << static_cast<int>(d) 
-                    << ":" << listens[i].port;
-    }
-    std::cout << std::endl;
-    
-    // Server names
-    const std::vector<std::string>& server_names = server.getServerNames();
-    std::cout << "Server Name: ";
-    for (size_t i = 0; i < server_names.size(); ++i) {
-        if (i > 0) std::cout << ", ";
-        std::cout << server_names[i];
-    }
-    std::cout << std::endl;
-    
-    // Root directory
-    std::cout << "Root: " << server.getRoot() << std::endl;
-    
-    // Index files
-    const std::vector<std::string>& index = server.getIndex();
-    std::cout << "Index: ";
-    for (size_t i = 0; i < index.size(); ++i) {
-        if (i > 0) std::cout << ", ";
-        std::cout << index[i];
-    }
-    std::cout << std::endl;
-    
-    // Client max body size
-    std::cout << "Client Max Body Size: " << server.getClientMaxBodySize() << " bytes" << std::endl;
-    
-    // Error pages
-    const std::map<int, std::string>& error_pages = server.getErrorPages();
-    if (!error_pages.empty()) {
-        std::cout << "Error Pages: ";
-        for (std::map<int, std::string>::const_iterator it = error_pages.begin(); 
-                it != error_pages.end(); ++it) {
-            if (it != error_pages.begin()) std::cout << ", ";
-            std::cout << it->first << ":" << it->second;
-        }
-        std::cout << std::endl;
-    }
-    
-    std::cout << std::endl;
-
-    // print locations
-    const std::vector<RuntimeLocation>& locations = server.getLocations();
-    if (!locations.empty()) {
-        std::cout << "=== Locations (" << locations.size() << ") ===" << std::endl;
-        for (size_t i = 0; i < locations.size(); ++i) {
-            const RuntimeLocation& loc = locations[i];
-            std::cout << "\nLocation [" << (i + 1) << "]: " << loc.getPath() << std::endl;
-            
-            if (!loc.getRoot().empty())
-                std::cout << "  Root: " << loc.getRoot() << std::endl;
-            
-            const std::vector<std::string>& loc_index = loc.getIndex();
-            if (!loc_index.empty()) {
-                std::cout << "  Index: ";
-                for (size_t j = 0; j < loc_index.size(); ++j) {
-                    if (j > 0) std::cout << ", ";
-                    std::cout << loc_index[j];
-                }
-                std::cout << std::endl;
-            }
-            
-            if (loc.getAutoindex())
-                std::cout << "  Autoindex: on" << std::endl;
-            
-            const std::set<HttpMethod>& methods = loc.getAllowedMethods();
-            if (!methods.empty()) {
-                std::cout << "  Allowed Methods: ";
-                bool first = true;
-                for (std::set<HttpMethod>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
-                    if (!first) std::cout << ", ";
-                    if (*it == GET) std::cout << "GET";
-                    else if (*it == POST) std::cout << "POST";
-                    else if (*it == DELETE) std::cout << "DELETE";
-                    first = false;
-                }
-                std::cout << std::endl;
-            }
-            
-            if (loc.getHasReturn()) {
-                const ReturnRule& redirect = loc.getRedirect();
-                std::cout << "  Return: " << redirect.status_code;
-                if (!redirect.target.empty())
-                    std::cout << " " << redirect.target;
-                std::cout << std::endl;
-            }
-            
-            if (loc.getHasUpload()) {
-                std::cout << "  Upload: on" << std::endl;
-                if (!loc.getUploadStore().empty())
-                    std::cout << "  Upload Store: " << loc.getUploadStore() << std::endl;
-            }
-            
-            if (loc.getHasCGI()) {
-                const std::map<std::string, std::string>& cgi_exec = loc.getCGIExec();
-                if (!cgi_exec.empty()) {
-                    std::cout << "  CGI Exec: ";
-                    for (std::map<std::string, std::string>::const_iterator it = cgi_exec.begin();
-                            it != cgi_exec.end(); ++it) {
-                        if (it != cgi_exec.begin()) std::cout << ", ";
-                        std::cout << it->first << " -> " << it->second;
-                    }
-                    std::cout << std::endl;
-                }
-            }
-        }
-        std::cout << std::endl;
-    }
-}
-
 static SocketKey createSocketKey(const Directive& d) {
     SocketKey socket;
     std::string addr_port = d.args[0];
@@ -208,7 +81,7 @@ RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
             server.addLocation(loc);
     }
     // server.sortLocations(); //implement
-    printServer(server);
+    debugPrintServer(server);
     return server;
 }
 
@@ -275,3 +148,140 @@ RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const Ru
     // ApplyInherance(loc, parent);
     return loc;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Debug Methods
+
+void ConfigResolver::debugPrintServerBasicInfo(const RuntimeServer& server) {
+    std::cout << "=== Server Configuration ===" << std::endl;
+    
+    // Listen addresses
+    const std::vector<SocketKey>& listens = server.getListens();
+    std::cout << "Listen: ";
+    for (size_t i = 0; i < listens.size(); ++i) {
+        uint32_t ip = listens[i].ip;
+        unsigned char a = (ip >> 24) & 0xFF;
+        unsigned char b = (ip >> 16) & 0xFF;
+        unsigned char c = (ip >> 8) & 0xFF;
+        unsigned char d = ip & 0xFF;
+        
+        if (i > 0) std::cout << ", ";
+        std::cout << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
+                    << static_cast<int>(c) << "." << static_cast<int>(d) 
+                    << ":" << listens[i].port;
+    }
+    std::cout << std::endl;
+    
+    // Server names
+    const std::vector<std::string>& server_names = server.getServerNames();
+    std::cout << "Server Name: ";
+    for (size_t i = 0; i < server_names.size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << server_names[i];
+    }
+    std::cout << std::endl;
+    
+    // Root and Index
+    std::cout << "Root: " << server.getRoot() << std::endl;
+    
+    const std::vector<std::string>& index = server.getIndex();
+    std::cout << "Index: ";
+    for (size_t i = 0; i < index.size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << index[i];
+    }
+    std::cout << std::endl;
+    
+    // Client max body size
+    std::cout << "Client Max Body Size: " << server.getClientMaxBodySize() << " bytes" << std::endl;
+    
+    // Error pages
+    const std::map<int, std::string>& error_pages = server.getErrorPages();
+    if (!error_pages.empty()) {
+        std::cout << "Error Pages: ";
+        for (std::map<int, std::string>::const_iterator it = error_pages.begin(); 
+                it != error_pages.end(); ++it) {
+            if (it != error_pages.begin()) std::cout << ", ";
+            std::cout << it->first << ":" << it->second;
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void ConfigResolver::debugPrintLocation(const RuntimeLocation& loc, size_t index) {
+    std::cout << "\nLocation [" << index << "]: " << loc.getPath() << std::endl;
+    
+    if (!loc.getRoot().empty())
+        std::cout << "  Root: " << loc.getRoot() << std::endl;
+    
+    const std::vector<std::string>& loc_index = loc.getIndex();
+    if (!loc_index.empty()) {
+        std::cout << "  Index: ";
+        for (size_t j = 0; j < loc_index.size(); ++j) {
+            if (j > 0) std::cout << ", ";
+            std::cout << loc_index[j];
+        }
+        std::cout << std::endl;
+    }
+    
+    if (loc.getAutoindex())
+        std::cout << "  Autoindex: on" << std::endl;
+    
+    const std::set<HttpMethod>& methods = loc.getAllowedMethods();
+    if (!methods.empty()) {
+        std::cout << "  Allowed Methods: ";
+        bool first = true;
+        for (std::set<HttpMethod>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
+            if (!first) std::cout << ", ";
+            if (*it == GET) std::cout << "GET";
+            else if (*it == POST) std::cout << "POST";
+            else if (*it == DELETE) std::cout << "DELETE";
+            first = false;
+        }
+        std::cout << std::endl;
+    }
+    
+    if (loc.getHasReturn()) {
+        const ReturnRule& redirect = loc.getRedirect();
+        std::cout << "  Return: " << redirect.status_code;
+        if (!redirect.target.empty())
+            std::cout << " " << redirect.target;
+        std::cout << std::endl;
+    }
+    
+    if (loc.getHasUpload()) {
+        std::cout << "  Upload: on" << std::endl;
+        if (!loc.getUploadStore().empty())
+            std::cout << "  Upload Store: " << loc.getUploadStore() << std::endl;
+    }
+    
+    if (loc.getHasCGI()) {
+        const std::map<std::string, std::string>& cgi_exec = loc.getCGIExec();
+        if (!cgi_exec.empty()) {
+            std::cout << "  CGI Exec: ";
+            for (std::map<std::string, std::string>::const_iterator it = cgi_exec.begin();
+                    it != cgi_exec.end(); ++it) {
+                if (it != cgi_exec.begin()) std::cout << ", ";
+                std::cout << it->first << " -> " << it->second;
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+void ConfigResolver::debugPrintServer(const RuntimeServer& server) {
+    debugPrintServerBasicInfo(server);
+    
+    const std::vector<RuntimeLocation>& locations = server.getLocations();
+    if (!locations.empty()) {
+        std::cout << "=== Locations (" << locations.size() << ") ===" << std::endl;
+        for (size_t i = 0; i < locations.size(); ++i) {
+            debugPrintLocation(locations[i], i + 1);
+        }
+        std::cout << std::endl;
+    }
+}
+
+// End Debug Methods
+// ---------------------------------------------------------------------------------------------------------------------
