@@ -1,4 +1,5 @@
 #include "core/RuntimeServer.hpp"
+#include <algorithm>
 
 //getters
 const std::vector<SocketKey>& RuntimeServer::getListens() const { return listens; }
@@ -43,5 +44,16 @@ const std::vector<RuntimeLocation>& RuntimeServer::getLocations() const {
 
 void RuntimeServer::addLocation(const RuntimeLocation& loc) { locations.push_back(loc); }
 
+// helpers
+static bool isMoreSpecificLocation(const RuntimeLocation& left, const RuntimeLocation& right) {
+    const std::string& leftPath = left.getPath();
+    const std::string& rightPath = right.getPath();
+    if (leftPath.size() != rightPath.size())
+        return leftPath.size() > rightPath.size();
+    return leftPath < rightPath;
+}
+
 // others
-void RuntimeServer::sortLocations() {} //implement
+void RuntimeServer::sortLocations() {
+    std::sort(locations.begin(), locations.end(), isMoreSpecificLocation);
+}

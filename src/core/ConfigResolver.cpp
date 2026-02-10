@@ -80,7 +80,7 @@ RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
             RuntimeLocation loc = buildLocation(*locNode, server);
             server.addLocation(loc);
     }
-    // server.sortLocations(); //implement
+    server.sortLocations();
     debugPrintServer(server);
     return server;
 }
