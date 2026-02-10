@@ -10,8 +10,10 @@ class RuntimeLocation {
         std::string path;
         std::string root;
         std::vector<std::string> index;
+        size_t client_max_body_size;
+        std::map<int, std::string> error_pages;
         bool autoindex;
-        std::set<HttpMethod> allowed_methods;
+        std::set<HttpMethod> allow_methods;
         bool has_return;
         ReturnRule redirect;
         bool has_upload;
@@ -23,6 +25,9 @@ class RuntimeLocation {
         // Setters
         void setRoot(const std::string& value);
         void setIndex(const std::vector<std::string>& values);
+        void setClientMaxBodySizeLoc(size_t value);
+        void addErrorPageLoc(int status, const std::string& path);
+        void mergeErrorPage(const std::map<int, std::string>& parent_error_pages);
         void setUploadStore(const std::string& value);
         void setCGI(const std::vector<std::string>& args);
         
@@ -35,6 +40,8 @@ class RuntimeLocation {
         const std::string& getPath() const;
         const std::string& getRoot() const;
         const std::vector<std::string>& getIndex() const;
+        size_t getClientMaxBodySize() const;
+        const std::map<int, std::string>& getErrorPages() const;
         bool getAutoindex() const;
         const std::set<HttpMethod>& getAllowedMethods() const;
         bool getHasReturn() const;

@@ -60,13 +60,16 @@ RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     // create RuntimeServer for each ServerNode DONE
     // create RuntimeLocation for eacho location{} DONE
     // apply inherance DOING
-    // sort locations
+    // sort locations Done
     // build RuntimeConfig
     for(std::vector<ServerNode>::const_iterator it = ast.servers.begin(); it != ast.servers.end(); ++it) {
         RuntimeServer server = buildServer(*it);
         const std::vector<SocketKey>& listens = server.getListens();
         for(std::vector<SocketKey>::const_iterator sk = listens.begin(); sk != listens.end(); ++sk) {
             runtime.servers[*sk].push_back(server);
+            const std::vector<RuntimeServer>& list = runtime.servers[*sk];
+            for (size_t i = 0; i < list.size(); ++i)
+                debugPrintServer(list[i]);
         }
     }
     return runtime;
@@ -81,7 +84,6 @@ RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
             server.addLocation(loc);
     }
     server.sortLocations();
-    debugPrintServer(server);
     return server;
 }
 
@@ -127,6 +129,15 @@ void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocati
         loc.setRoot(dir.args[0]);
     else if (dir.name == "index")
         loc.setIndex(dir.args);
+    else if (dir.name == "client_max_body_size")
+        loc.setClientMaxBodySizeLoc(parseClientMaxBodySize(dir.args[0]));
+    else if (dir.name == "error_page") {
+        const std::string& path = dir.args.back();
+        for (size_t i = 0; i + 1 < dir.args.size(); ++i) {
+            int code = std::atoi(dir.args[i].c_str());
+            loc.addErrorPageLoc(code, path);
+        }
+    }
     else if (dir.name == "upload" || dir.name == "cgi" || (dir.name == "autoindex" && dir.args[0] == "on"))
         loc.changeStatus(dir.name);
     else if (dir.name == "allow_methods")
@@ -141,12 +152,21 @@ void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocati
 
 RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const RuntimeServer& parent) {
     RuntimeLocation loc(node.path);
-    (void)parent;
     for(std::vector<Directive>::const_iterator it = node.directives.begin(); it != node.directives.end(); ++it) {
         ApplyLocationDirectives(*it, loc);
     }
-    // ApplyInherance(loc, parent);
+    ApplyInherance(loc, parent);
     return loc;
+}
+
+void ConfigResolver::ApplyInherance(RuntimeLocation& loc, const RuntimeServer& parent) {
+    if (loc.getRoot().empty())
+        loc.setRoot(parent.getRoot());
+    if (loc.getIndex().empty())
+        loc.setIndex(parent.getIndex());
+    loc.mergeErrorPage(parent.getErrorPages());
+    if (loc.getClientMaxBodySize() == 0)
+        loc.setClientMaxBodySizeLoc(parent.getClientMaxBodySize());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -242,6 +262,21 @@ void ConfigResolver::debugPrintLocation(const RuntimeLocation& loc, size_t index
         std::cout << std::endl;
     }
     
+    // Client max body size
+    std::cout << "  Client Max Body Size: " << loc.getClientMaxBodySize() << " bytes" << std::endl;
+    
+    // Error pages
+    const std::map<int, std::string>& error_pages = loc.getErrorPages();
+    if (!error_pages.empty()) {
+        std::cout << "  Error Pages: ";
+        for (std::map<int, std::string>::const_iterator it = error_pages.begin(); 
+                it != error_pages.end(); ++it) {
+            if (it != error_pages.begin()) std::cout << ", ";
+            std::cout << it->first << ":" << it->second;
+        }
+        std::cout << std::endl;
+    }
+
     if (loc.getHasReturn()) {
         const ReturnRule& redirect = loc.getRedirect();
         std::cout << "  Return: " << redirect.status_code;
