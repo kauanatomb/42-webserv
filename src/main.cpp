@@ -3,6 +3,7 @@
 #include "config/ConfigErrors.hpp"
 #include "resolver/RuntimeConfig.hpp"
 #include "resolver/ConfigResolver.hpp"
+#include "network/ServerEngine.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -13,7 +14,8 @@ int main(int argc, char **argv) {
     try {
         ConfigAST ast = ConfigLoader::load(configPath);
         const RuntimeConfig runtime = ConfigResolver::resolve(ast);
-        // initialize server after (sockets, select..)
+        // ServerEngine engine(runtime);
+        // engine.start();
     } catch (const ConfigError& e) {
         std::cerr << "Config Error: " << e.what() << std::endl;
         return 1;

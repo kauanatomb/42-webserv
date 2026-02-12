@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 CXX = c++
-CXX_FLAGS = -Wall -Wextra -Werror -std=c++98 -I includes
+CXX_FLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -pedantic
 INFILE = src/main.cpp src/config/ConfigLoader.cpp src/config/Tokenizer.cpp \
 			src/config/ConfigParser.cpp src/config/ConfigValidator.cpp \
 			src/resolver/ConfigResolver.cpp src/resolver/RuntimeServer.cpp \
