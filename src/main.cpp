@@ -1,8 +1,8 @@
 #include <iostream>
 #include "config/ConfigLoader.hpp"
 #include "config/ConfigErrors.hpp"
-#include "core/RuntimeConfig.hpp"
-#include "core/ConfigResolver.hpp"
+#include "resolver/RuntimeConfig.hpp"
+#include "resolver/ConfigResolver.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 2) {

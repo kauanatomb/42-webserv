@@ -1,4 +1,4 @@
-#include "core/ConfigResolver.hpp"
+#include "resolver/ConfigResolver.hpp"
 #include <cstdlib>
 #include <cctype>
 #include <limits>

@@ -1,4 +1,4 @@
-#include "core/RuntimeLocation.hpp"
+#include "resolver/RuntimeLocation.hpp"
 #include <cstdlib>
 
 RuntimeLocation::RuntimeLocation(const std::string& nodePath) : path(nodePath), client_max_body_size(0), autoindex(false), has_return(false), has_upload(false), has_cgi(false) {}
