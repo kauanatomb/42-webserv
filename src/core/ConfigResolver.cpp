@@ -57,11 +57,6 @@ static SocketKey createSocketKey(const Directive& d) {
 
 RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     RuntimeConfig runtime;
-    // create RuntimeServer for each ServerNode DONE
-    // create RuntimeLocation for eacho location{} DONE
-    // apply inherance DOING
-    // sort locations Done
-    // build RuntimeConfig
     for(std::vector<ServerNode>::const_iterator it = ast.servers.begin(); it != ast.servers.end(); ++it) {
         RuntimeServer server = buildServer(*it);
         const std::vector<SocketKey>& listens = server.getListens();
@@ -143,7 +138,7 @@ void ConfigResolver::ApplyLocationDirectives(const Directive& dir, RuntimeLocati
     else if (dir.name == "allow_methods")
         loc.methodsHTTP(dir.args);
     else if (dir.name == "return")
-        loc.hasReturn(dir.args);
+        loc.setReturn(dir.args);
     else if (dir.name == "upload_store")
         loc.setUploadStore(dir.args[0]);
     else if (dir.name == "cgi_exec")
@@ -160,10 +155,12 @@ RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const Ru
 }
 
 void ConfigResolver::ApplyInherance(RuntimeLocation& loc, const RuntimeServer& parent) {
-    if (loc.getRoot().empty())
-        loc.setRoot(parent.getRoot());
-    if (loc.getIndex().empty())
-        loc.setIndex(parent.getIndex());
+    if (!loc.getHasReturn()) {
+        if (loc.getRoot().empty())
+            loc.setRoot(parent.getRoot());
+        if (loc.getIndex().empty())
+            loc.setIndex(parent.getIndex());
+    }
     loc.mergeErrorPage(parent.getErrorPages());
     if (loc.getClientMaxBodySize() == 0)
         loc.setClientMaxBodySizeLoc(parent.getClientMaxBodySize());

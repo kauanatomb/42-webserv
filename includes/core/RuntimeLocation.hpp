@@ -34,7 +34,7 @@ class RuntimeLocation {
         // Methods for directive processing
         void changeStatus(const std::string& directive_name);
         void methodsHTTP(const std::vector<std::string>& methods);
-        void hasReturn(const std::vector<std::string>& args);
+        void setReturn(const std::vector<std::string>& args);
         
         // Getters
         const std::string& getPath() const;

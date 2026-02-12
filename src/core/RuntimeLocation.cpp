@@ -62,7 +62,7 @@ void RuntimeLocation::methodsHTTP(const std::vector<std::string>& methods) {
     }
 }
 
-void RuntimeLocation::hasReturn(const std::vector<std::string>& args) {
+void RuntimeLocation::setReturn(const std::vector<std::string>& args) {
     if (args.empty())
         return;
     
