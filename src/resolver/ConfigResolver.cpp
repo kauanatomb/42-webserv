@@ -1,4 +1,5 @@
 #include "resolver/ConfigResolver.hpp"
+#include "resolver/SocketKeyUtils.hpp"
 #include "config/ConfigErrors.hpp"
 #include <cstdlib>
 #include <cctype>
@@ -31,54 +32,6 @@ static size_t parseClientMaxBodySize(const std::string& value) {
     return static_cast<size_t>(base) * multiplier;
 }
 
-static SocketKey createSocketKey(const Directive& d) {
-    SocketKey socket;
-    std::string addr_port = d.args[0];
-    size_t colon_pos = addr_port.rfind(':');
-    
-    std::string ip_str;
-    std::string port_str;
-    
-    if (colon_pos == std::string::npos) {
-        ip_str = "0.0.0.0";
-        port_str = addr_port;
-    } else {
-        ip_str = addr_port.substr(0, colon_pos);
-        port_str = addr_port.substr(colon_pos + 1);
-    }
-    
-    // Convert IP (xxx.xxx.xxx.xxx) to uint32_t
-    unsigned int a, b, c, d_ip;
-    std::sscanf(ip_str.c_str(), "%u.%u.%u.%u", &a, &b, &c, &d_ip);
-    socket.ip = (a << 24) | (b << 16) | (c << 8) | d_ip;
-    // Convert port to uint16_t
-    socket.port = static_cast<uint16_t>(std::strtoul(port_str.c_str(), 0, 10));
-    
-    return socket;
-}
-
-static bool socketKeyExists(const std::vector<SocketKey>& listens, const SocketKey& key) {
-    for (std::vector<SocketKey>::const_iterator it = listens.begin(); it != listens.end(); ++it) {
-        if (it->ip == key.ip && it->port == key.port)
-            return true;
-    }
-    return false;
-}
-
-static std::string socketKeyToString(const SocketKey& sk) {
-    unsigned char a = (sk.ip >> 24) & 0xFF;
-    unsigned char b = (sk.ip >> 16) & 0xFF;
-    unsigned char c = (sk.ip >> 8) & 0xFF;
-    unsigned char d = sk.ip & 0xFF;
-    
-    char buffer[50];
-    std::snprintf(buffer, sizeof(buffer), "%u.%u.%u.%u:%u", 
-                  static_cast<int>(a), static_cast<int>(b), 
-                  static_cast<int>(c), static_cast<int>(d), 
-                  sk.port);
-    return std::string(buffer);
-}
-
 RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     RuntimeConfig runtime;
     for(std::vector<ServerNode>::const_iterator it = ast.servers.begin(); it != ast.servers.end(); ++it) {
@@ -109,9 +62,9 @@ RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
 void ConfigResolver::applyServerDirectives(RuntimeServer& server, const std::vector<Directive>& directives) {
     for(std::vector<Directive>::const_iterator it = directives.begin(); it != directives.end(); ++it) {
         if ((*it).name == "listen") {
-            SocketKey key = createSocketKey(*it);
-            if (socketKeyExists(server.getListens(), key)) {
-                throw ValidationError("Duplicate listen directive: " + socketKeyToString(key));
+            SocketKey key = SocketKeyUtils::fromString((*it).args[0]);
+            if (SocketKeyUtils::exists(server.getListens(), key)) {
+                throw ValidationError("Duplicate listen directive: " + SocketKeyUtils::toString(key));
             }
             server.addListen(key);
         }
@@ -202,28 +155,14 @@ void ConfigResolver::debugPrintServerBasicInfo(const RuntimeServer& server, cons
     std::cout << "=== Server Configuration ===" << std::endl;
     
     // Socket Key
-    unsigned char a = (sk.ip >> 24) & 0xFF;
-    unsigned char b = (sk.ip >> 16) & 0xFF;
-    unsigned char c = (sk.ip >> 8) & 0xFF;
-    unsigned char d = sk.ip & 0xFF;
-    std::cout << "Socket: " << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
-              << static_cast<int>(c) << "." << static_cast<int>(d) 
-              << ":" << sk.port << std::endl;
+    std::cout << "Socket: " << SocketKeyUtils::toString(sk) << std::endl;
     
     // Listen addresses
     const std::vector<SocketKey>& listens = server.getListens();
     std::cout << "Listen: ";
     for (size_t i = 0; i < listens.size(); ++i) {
-        uint32_t ip = listens[i].ip;
-        unsigned char a = (ip >> 24) & 0xFF;
-        unsigned char b = (ip >> 16) & 0xFF;
-        unsigned char c = (ip >> 8) & 0xFF;
-        unsigned char d = ip & 0xFF;
-        
         if (i > 0) std::cout << ", ";
-        std::cout << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
-                    << static_cast<int>(c) << "." << static_cast<int>(d) 
-                    << ":" << listens[i].port;
+        std::cout << SocketKeyUtils::toString(listens[i]);
     }
     std::cout << std::endl;
     
