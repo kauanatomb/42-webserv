@@ -18,4 +18,3 @@ class ValidationError : public ConfigError {
         explicit ValidationError(const std::string& msg)
             : ConfigError(msg) {}
 };
-

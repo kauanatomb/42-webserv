@@ -1,8 +1,10 @@
 #include "resolver/ConfigResolver.hpp"
+#include "config/ConfigErrors.hpp"
 #include <cstdlib>
 #include <cctype>
 #include <limits>
 #include <iostream>
+#include <algorithm>
 
 static size_t parseClientMaxBodySize(const std::string& value) {
     size_t i = 0;
@@ -55,6 +57,28 @@ static SocketKey createSocketKey(const Directive& d) {
     return socket;
 }
 
+static bool socketKeyExists(const std::vector<SocketKey>& listens, const SocketKey& key) {
+    for (std::vector<SocketKey>::const_iterator it = listens.begin(); it != listens.end(); ++it) {
+        if (it->ip == key.ip && it->port == key.port)
+            return true;
+    }
+    return false;
+}
+
+static std::string socketKeyToString(const SocketKey& sk) {
+    unsigned char a = (sk.ip >> 24) & 0xFF;
+    unsigned char b = (sk.ip >> 16) & 0xFF;
+    unsigned char c = (sk.ip >> 8) & 0xFF;
+    unsigned char d = sk.ip & 0xFF;
+    
+    char buffer[50];
+    std::snprintf(buffer, sizeof(buffer), "%u.%u.%u.%u:%u", 
+                  static_cast<int>(a), static_cast<int>(b), 
+                  static_cast<int>(c), static_cast<int>(d), 
+                  sk.port);
+    return std::string(buffer);
+}
+
 RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
     RuntimeConfig runtime;
     for(std::vector<ServerNode>::const_iterator it = ast.servers.begin(); it != ast.servers.end(); ++it) {
@@ -64,7 +88,7 @@ RuntimeConfig ConfigResolver::resolve(const ConfigAST& ast) {
             runtime.servers[*sk].push_back(server);
             const std::vector<RuntimeServer>& list = runtime.servers[*sk];
             for (size_t i = 0; i < list.size(); ++i)
-                debugPrintServer(list[i]);
+                debugPrintServer(list[i], *sk);
         }
     }
     return runtime;
@@ -84,8 +108,13 @@ RuntimeServer ConfigResolver::buildServer(const ServerNode& node) {
 
 void ConfigResolver::applyServerDirectives(RuntimeServer& server, const std::vector<Directive>& directives) {
     for(std::vector<Directive>::const_iterator it = directives.begin(); it != directives.end(); ++it) {
-        if ((*it).name == "listen")
-            server.addListen(createSocketKey(*it));
+        if ((*it).name == "listen") {
+            SocketKey key = createSocketKey(*it);
+            if (socketKeyExists(server.getListens(), key)) {
+                throw ValidationError("Duplicate listen directive: " + socketKeyToString(key));
+            }
+            server.addListen(key);
+        }
         else if ((*it).name == "server_name")
             server.addServerNames((*it).args);
         else if ((*it).name == "root")
@@ -169,8 +198,17 @@ void ConfigResolver::ApplyInherance(RuntimeLocation& loc, const RuntimeServer& p
 // ---------------------------------------------------------------------------------------------------------------------
 // Debug Methods
 
-void ConfigResolver::debugPrintServerBasicInfo(const RuntimeServer& server) {
+void ConfigResolver::debugPrintServerBasicInfo(const RuntimeServer& server, const SocketKey& sk) {
     std::cout << "=== Server Configuration ===" << std::endl;
+    
+    // Socket Key
+    unsigned char a = (sk.ip >> 24) & 0xFF;
+    unsigned char b = (sk.ip >> 16) & 0xFF;
+    unsigned char c = (sk.ip >> 8) & 0xFF;
+    unsigned char d = sk.ip & 0xFF;
+    std::cout << "Socket: " << static_cast<int>(a) << "." << static_cast<int>(b) << "." 
+              << static_cast<int>(c) << "." << static_cast<int>(d) 
+              << ":" << sk.port << std::endl;
     
     // Listen addresses
     const std::vector<SocketKey>& listens = server.getListens();
@@ -302,8 +340,8 @@ void ConfigResolver::debugPrintLocation(const RuntimeLocation& loc, size_t index
     }
 }
 
-void ConfigResolver::debugPrintServer(const RuntimeServer& server) {
-    debugPrintServerBasicInfo(server);
+void ConfigResolver::debugPrintServer(const RuntimeServer& server, const SocketKey& sk) {
+    debugPrintServerBasicInfo(server, sk);
     
     const std::vector<RuntimeLocation>& locations = server.getLocations();
     if (!locations.empty()) {
@@ -317,4 +355,3 @@ void ConfigResolver::debugPrintServer(const RuntimeServer& server) {
 
 // End Debug Methods
 // ---------------------------------------------------------------------------------------------------------------------
-    
