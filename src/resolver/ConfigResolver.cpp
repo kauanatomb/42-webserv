@@ -132,11 +132,11 @@ RuntimeLocation ConfigResolver::buildLocation(const LocationNode& node, const Ru
     for(std::vector<Directive>::const_iterator it = node.directives.begin(); it != node.directives.end(); ++it) {
         ApplyLocationDirectives(*it, loc);
     }
-    ApplyInherance(loc, parent);
+    ApplyInheritance(loc, parent);
     return loc;
 }
 
-void ConfigResolver::ApplyInherance(RuntimeLocation& loc, const RuntimeServer& parent) {
+void ConfigResolver::ApplyInheritance(RuntimeLocation& loc, const RuntimeServer& parent) {
     if (!loc.getHasReturn()) {
         if (loc.getRoot().empty())
             loc.setRoot(parent.getRoot());
