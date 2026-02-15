@@ -1,6 +1,7 @@
 #include "resolver/SocketKeyUtils.hpp"
 #include <cstdio>
 #include <cstdlib>
+#include <cstdio>
 
 SocketKey SocketKeyUtils::fromString(const std::string& addr_port) {
     SocketKey socket;
