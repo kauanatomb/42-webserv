@@ -4,7 +4,7 @@
 #include <map>
 #include <poll.h>
 #include "resolver/RuntimeConfig.hpp"
-// #include "Connection.hpp"
+#include "Connection.hpp"
 // #include "RequestHandler.hpp"
 
 class ServerEngine {
@@ -19,13 +19,12 @@ class ServerEngine {
 
         std::vector<ListeningSocket> _listeningSockets;
 
-        // fd -> Connection
-        // std::map<int, Connection> _connections;
+        // fd -> Connection - active clients
+        std::map<int, Connection> _connections;
 
         // poll descriptors
         std::vector<pollfd> _pollfds;
 
-    private:
         void createListeningSockets();
         void setupSocket(const SocketKey& key);
 
@@ -33,9 +32,6 @@ class ServerEngine {
         void handlePollEvent(size_t index);
 
         void acceptConnection(int serverFd);
-        void readFromConnection(int clientFd);
-        void writeToConnection(int clientFd);
-
         void closeConnection(int clientFd);
 
     public:

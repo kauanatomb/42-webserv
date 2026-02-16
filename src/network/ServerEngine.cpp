@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 ServerEngine::ServerEngine(const RuntimeConfig& config) : _config(config) {}
 
@@ -46,14 +47,15 @@ void ServerEngine::setupSocket(const SocketKey& key) {
         throw RuntimeError("bind() failed");
     if (listen(fd, SOMAXCONN) < 0)
         throw RuntimeError("listen() failed");
-    if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        throw RuntimeError("fcntl F_GETFL failed");
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
         throw RuntimeError("fcntl O_NONBLOCK failed");
-
     ListeningSocket ls;
     ls.key = key;
     ls.fd = fd;
     _listeningSockets.push_back(ls);
-
 }
 
 void ServerEngine::eventLoop() {
@@ -69,24 +71,45 @@ void ServerEngine::eventLoop() {
 }
 
 void ServerEngine::handlePollEvent(size_t index) {
-
+    pollfd& pfd = _pollfds[index];
+    if (pfd.revents & (POLLERR | POLLHUP)) {
+        closeConnection(pfd.fd);
+        return;
+    }
+    if (_connections.find(pfd.fd) == _connections.end()) {
+        if (pfd.revents & POLLIN)
+            acceptConnection(pfd.fd);
+        return;
+    }
+    Connection& conn = _connections[pfd.fd];
+    if (pfd.revents & POLLIN)
+        conn.onReadable();
+    if (pfd.revents & POLLOUT)
+        conn.onWritable();
+    if (conn.isClosed())
+        closeConnection(pfd.fd);
 }
 
 void ServerEngine::acceptConnection(int serverFd) {
-
-}
-
-void ServerEngine::readFromConnection(int clientFd) {
-
-}
-
-void ServerEngine::writeToConnection(int clientFd) {
-
+    int clientFd = accept(serverFd, NULL, NULL);
+    if (clientFd < 0)
+        return;
+    fcntl(clientFd, F_SETFL, O_NONBLOCK);
+    _connections.insert(std::make_pair(clientFd, Connection(clientFd, _config)));
+    pollfd pfd;
+    pfd.fd = clientFd;
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    _pollfds.push_back(pfd);
 }
 
 void ServerEngine::closeConnection(int clientFd) {
-
-}
-        
-
-        
+    close(clientFd);
+    _connections.erase(clientFd);
+    for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
+        if (it->fd == clientFd) {
+            _pollfds.erase(it);
+            break;
+        }
+    }
+}   
