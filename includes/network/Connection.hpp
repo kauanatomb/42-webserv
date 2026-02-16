@@ -10,7 +10,7 @@ class Connection {
         bool isClosed() const;
         bool wantsWrite() const;
 
-        int getFd() const;
+        // int getFd() const;
 
     private:
         int _socket_fd;
