@@ -63,9 +63,9 @@ void ServerEngine::eventLoop() {
         int ready = poll(&_pollfds[0], _pollfds.size(), -1);
         if (ready <= 0)
             continue;
-        for (size_t i = 0; i < _pollfds.size(); ++i) {
-            if (_pollfds[i].revents != 0)
-                handlePollEvent(i);
+        for (size_t i = _pollfds.size(); i > 0; --i) {
+            if (_pollfds[i - 1].revents != 0)
+                handlePollEvent(i - 1);
         }
     }
 }
@@ -86,8 +86,14 @@ void ServerEngine::handlePollEvent(size_t index) {
         conn.onReadable();
     if (pfd.revents & POLLOUT)
         conn.onWritable();
-    if (conn.isClosed())
+    if (conn.isClosed()) {
         closeConnection(pfd.fd);
+        return;
+    }
+    if (conn.wantsWrite())
+        pfd.events = POLLOUT;
+    else
+        pfd.events = POLLIN;
 }
 
 void ServerEngine::acceptConnection(int serverFd) {
