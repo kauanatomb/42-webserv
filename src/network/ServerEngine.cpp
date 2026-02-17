@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <cstring>
 
 ServerEngine::ServerEngine(const RuntimeConfig& config) : _config(config) {}
 
@@ -38,7 +39,8 @@ void ServerEngine::setupSocket(const SocketKey& key) {
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
         throw RuntimeError("setsockopt() failed");
     
-    struct sockaddr_in addr{};
+    struct sockaddr_in addr;
+    std::memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(key.ip);
     addr.sin_port = htons(key.port);
@@ -76,16 +78,17 @@ void ServerEngine::handlePollEvent(size_t index) {
         closeConnection(pfd.fd);
         return;
     }
-    if (_connections.find(pfd.fd) == _connections.end()) {
+    std::map<int, Connection>::iterator it = _connections.find(pfd.fd);
+    if (it == _connections.end()) {
         if (pfd.revents & POLLIN)
             acceptConnection(pfd.fd);
         return;
     }
-    Connection& conn = _connections[pfd.fd];
+    Connection& conn = it->second;
     if (pfd.revents & POLLIN)
         conn.onReadable();
-    if (pfd.revents & POLLOUT)
-        conn.onWritable();
+    // if (pfd.revents & POLLOUT)
+    //     conn.onWritable();
     if (conn.isClosed()) {
         closeConnection(pfd.fd);
         return;
