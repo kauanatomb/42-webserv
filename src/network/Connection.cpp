@@ -30,20 +30,16 @@ void Connection::onReadable() {
     }
     _read_buffer.append(buffer, bytes);
     
-    // DEBUG: Print raw request
-    std::cout << "========== RAW REQUEST ==========" << std::endl;
-    std::cout << _read_buffer << std::endl;
-    std::cout << "=================================" << std::endl;
-    
-    // _state = ConnectionState::PARSING;
-    // if (_parser.parse(_read_buffer, _request)) {
-    //     _state = ConnectionState::HANDLING;
+    _state = PARSING;
+    if (_parser.parse(_read_buffer, _request)) {
+        _state = HANDLING;
+        _request.print();
 
     //     RequestHandler handler(_config);
     //     _response = handler.handle(_request);
     //     _write_buffer = _response.toString();
     //     _state = ConnectionState::WRITING;
-    // }
+    }
 }
 
 // void Connection::onWritable() {
