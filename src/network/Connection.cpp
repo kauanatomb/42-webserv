@@ -32,7 +32,7 @@ void Connection::onReadable() {
     _state = PARSING;
     if (_parser.parse(_read_buffer, _request)) {
         if (_parser.getHasError()) {
-            int status = _parser.getErrorStatus(); // 400 bad request
+            int status = _parser.getErrorStatus();
             std::cout << status << "\n";
             _response = HttpResponse::fromStatus(status);
         } else {
@@ -42,23 +42,23 @@ void Connection::onReadable() {
             // _response = handler.handle(_request);
         }
         _write_buffer = _response.serialize();
+        _state = WRITING;
     }
 
 }
 
-// void Connection::onWritable() {
-//      _state = WRITING;
-//     ssize_t bytes = send(_socket_fd, _write_buffer.c_str(), _write_buffer.size(), 0);
-//     if (bytes <= 0) {
-//         _state = CLOSED;
-//         return;
-//     }
-//     _write_buffer.erase(0, bytes);
-//     if (_write_buffer.empty()) {
-//         if (_keep_alive) {
-//             resetForNextRequest();
-//         } else {
-//             _state = CLOSED;
-//         }
-//     }
-// }
+void Connection::onWritable() {
+    ssize_t bytes = send(_socket_fd, _write_buffer.c_str(), _write_buffer.size(), 0);
+    if (bytes <= 0) {
+        _state = CLOSED;
+        return;
+    }
+    _write_buffer.erase(0, bytes);
+    if (_write_buffer.empty()) {
+        // if (_keep_alive) {
+        //     resetForNextRequest();
+        // } else {
+            _state = CLOSED;
+        // }
+    }
+}

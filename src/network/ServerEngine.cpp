@@ -87,8 +87,8 @@ void ServerEngine::handlePollEvent(size_t index) {
     Connection& conn = it->second;
     if (pfd.revents & POLLIN)
         conn.onReadable();
-    // if (pfd.revents & POLLOUT)
-    //     conn.onWritable();
+    if (pfd.revents & POLLOUT)
+        conn.onWritable();
     if (conn.isClosed()) {
         closeConnection(pfd.fd);
         return;

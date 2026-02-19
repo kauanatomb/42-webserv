@@ -2,13 +2,14 @@
 
 #include "../resolver/RuntimeConfig.hpp"
 #include "../http/RequestParser.hpp"
+#include "../http/HttpResponse.hpp"
 
 class Connection {
     public:
         Connection(int fd, const RuntimeConfig& cfg);
 
         void onReadable();
-        // void onWritable();
+        void onWritable();
 
         bool isClosed() const;
         bool wantsWrite() const;
@@ -22,7 +23,7 @@ class Connection {
 
         RequestParser _parser;
         HttpRequest _request;
-        // HttpResponse _response;
+        HttpResponse _response;
 
         const RuntimeConfig& _config;
 
