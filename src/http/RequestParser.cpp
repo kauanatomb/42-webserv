@@ -65,3 +65,7 @@ bool RequestParser::isComplete() const {
 bool RequestParser::hasError() const {
     return false;
 }
+
+int& RequestParser::getErrorStatus() {
+    return _error_status;
+}
