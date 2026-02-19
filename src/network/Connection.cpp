@@ -34,14 +34,14 @@ void Connection::onReadable() {
         if (_parser.getHasError()) {
             int status = _parser.getErrorStatus(); // 400 bad request
             std::cout << status << "\n";
-            // _response = HttpResponse::fromStatus(status);
+            _response = HttpResponse::fromStatus(status);
         } else {
             _request.print();
             _state = HANDLING;
             // RequestHandler handler(_config);
             // _response = handler.handle(_request);
         }
-        // _write_buffer = _response.toString();
+        _write_buffer = _response.serialize();
     }
 
 }
