@@ -31,9 +31,9 @@ void Connection::onReadable() {
     _read_buffer.append(buffer, bytes);
     _state = PARSING;
     if (_parser.parse(_read_buffer, _request)) {
-        if (_parser.hasError()) {
+        if (_parser.getHasError()) {
             int status = _parser.getErrorStatus(); // 400 bad request
-            (void)status;
+            std::cout << status << "\n";
             // _response = HttpResponse::fromStatus(status);
         } else {
             _request.print();

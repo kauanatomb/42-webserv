@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 
+RequestParser::RequestParser() : _state(START_LINE), _error_status(0), _has_error(false) {}
+
 bool RequestParser::parse(std::string& buffer, HttpRequest& request) {
     size_t header_end = buffer.find("\r\n\r\n");
     if (header_end == std::string::npos)
@@ -23,10 +25,22 @@ bool RequestParser::parse(std::string& buffer, HttpRequest& request) {
 }
 
 void RequestParser::getFirstLine(const std::string& buffer, size_t end_first_line, HttpRequest& request) {
-    _state = START_LINE;
     std::string first_line = buffer.substr(0, end_first_line);
     std::istringstream iss(first_line);
     iss >> request.method >> request.uri >> request.version;
+
+    if (request.method.empty() || request.uri.empty() || request.version.empty()) {
+        _has_error = true;
+        _error_status = 400;
+    }
+    if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
+        _has_error = true;
+        _error_status = 405;
+    }
+    if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1") {
+        _has_error = true;
+        _error_status = 505;
+    }
 }
 
 void RequestParser::getHeaders(const std::string& header_section, HttpRequest& request) {
@@ -43,6 +57,10 @@ void RequestParser::getHeaders(const std::string& header_section, HttpRequest& r
         if (!value.empty() && value[0] == ' ')
             value.erase(0, 1);
         request.headers[key] = value;
+    }
+    if (request.headers.find("Host") == request.headers.end()) {
+        _has_error = true;
+        _error_status = 400;
     }
 }
 
@@ -62,8 +80,8 @@ bool RequestParser::isComplete() const {
     return _state == COMPLETE;
 }
 
-bool RequestParser::hasError() const {
-    return false;
+bool RequestParser::getHasError() const {
+    return _has_error;
 }
 
 int& RequestParser::getErrorStatus() {
