@@ -16,6 +16,7 @@ INFILE = src/main.cpp src/config/ConfigLoader.cpp src/config/Tokenizer.cpp \
 			src/config/ConfigParser.cpp src/config/ConfigValidator.cpp \
 			src/resolver/ConfigResolver.cpp src/resolver/SocketKeyUtils.cpp \
 			src/resolver/RuntimeServer.cpp src/resolver/RuntimeLocation.cpp \
+			src/resolver/ServerResolver.cpp \
 			src/network/Connection.cpp src/network/ServerEngine.cpp \
 			src/http/RequestParser.cpp src/http/HttpRequest.cpp \
 			src/http/HttpResponse.cpp
